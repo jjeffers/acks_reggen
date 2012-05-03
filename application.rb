@@ -8,7 +8,7 @@ set :logging, true
 
 get '/' do
   content_type 'application/pdf'
-
+  headers['Cache-Control'] = "public, max-age=6000000000000000000"
   prawn :index
   
 end
