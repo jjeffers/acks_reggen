@@ -58,15 +58,15 @@ def generate_ruin_or_lair(pdf, hexmap, x,y)
   type = ""
   case roll 
   when 0..3 
-    puts "\t\tmegadungeon (6-10 sessions)"
+    #puts "\t\tmegadungeon (6-10 sessions)"
     type = "megadungeon"
     draw_hex(pdf, x,y, true, "megadungeon")
   when 3..13
-    puts "\t\tdungeon (1-2 sessions)"
+    #puts "\t\tdungeon (1-2 sessions)"
     type = "dungeon"
     draw_hex(pdf, x,y, true, "dungeon")
   else
-    puts "\t\tsmall lair (1-3 encounters)"
+    #puts "\t\tsmall lair (1-3 encounters)"
     type = "lair"
     draw_hex(pdf, x,y, true, "lair")
   end
@@ -90,12 +90,12 @@ def generate_hex(pdf, hexmap, x, y)
       bias = (vbias.abs.to_f/$total_bias)*vbias.to_f + (hbias.abs.to_f/$total_bias)*hbias.to_f
     end
     
-    puts "bias = #{hbias} #{vbias} #{bias}"
+    #puts "bias = #{hbias} #{vbias} #{bias}"
     roll += bias
-    puts "roll #{roll}"
+    #puts "roll #{roll}"
     
     if (roll <= 33)
-      puts "\t\tsettlement"
+      #puts "\t\tsettlement"
       hexmap[x][y] = { :x => x, :y => y, :type => "settlement" }
       
       draw_hex(pdf, x,y, true, "settlement")
@@ -145,6 +145,8 @@ def generate_map_pdf(pdf)
   location_map.each_pair do |k,v|
     pdf.text v.to_s + " " + k.pluralize
   end
+  
+  puts "Done generation pdf."
   pdf
 
 end
