@@ -3,6 +3,6 @@ ass Application < Sinatra::Base
   set :logging, true
 
   get '/' do
-    haml :index
+    "hello world!"
   end
 end
