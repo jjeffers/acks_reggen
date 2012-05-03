@@ -77,13 +77,13 @@ end
 def generate_hex(pdf, hexmap, x, y)
 
   if rand($width*$height) <= $number_of_locations
-    puts "\tsomething at " + "%02d" % x + "%02d" % y
+    #puts "\tsomething at " + "%02d" % x + "%02d" % y
 
     roll = rand(100)
     vbias = ((y.to_f/$height.to_f*$vbias) + (-1*($vbias/2.0)))
     hbias = ((x.to_f/$width.to_f*$hbias)+ (-1*($hbias/2.0)))
     
-    puts "roll #{roll}"
+    #puts "roll #{roll}"
     if $total_bias == 0
       bias = 0
     else
@@ -149,7 +149,7 @@ def generate_map_pdf(pdf)
 
 
   
-  puts "Done generation pdf."
+  puts "Done generating pdf."
   pdf
 
 end
