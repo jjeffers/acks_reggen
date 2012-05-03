@@ -138,13 +138,16 @@ def generate_map_pdf(pdf)
           end
         end
       end
+      
+      pdf.move_down 10
+      pdf.text "Summary"
+      location_map.each_pair do |k,v|
+        pdf.text v.to_s + " " + k.pluralize
+      end
+      
   end
 
-  pdf.move_down 10
-  pdf.text "Summary"
-  location_map.each_pair do |k,v|
-    pdf.text v.to_s + " " + k.pluralize
-  end
+
   
   puts "Done generation pdf."
   pdf
