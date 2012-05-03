@@ -1,5 +1,5 @@
 require 'sinatra'
-require "application"
+require "./application"
 
 map '/' do
   run Application
