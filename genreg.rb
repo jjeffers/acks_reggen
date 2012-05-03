@@ -4,15 +4,11 @@ require "prawn"
 $number_of_locations = 45
 
 sin60 = 0.866025404
-$C = 11
+$C = 10
 $A = 0.5*$C
 $B = $C*sin60
-puts $A
-puts $B
-puts $C
-$hex_bases = [ [0, $B], [$A, 0], [$A+$C, 0], [2*$C, $B], [$A+$C, 2*$B], [$A, 2*$B]]
 
-$pdf = Prawn::Document.new(:margin => [0.25,0.25,0.25,0.25])
+$hex_bases = [ [0, $B], [$A, 0], [$A+$C, 0], [2*$C, $B], [$A+$C, 2*$B], [$A, 2*$B]]
 
 $width = 30
 $height = 40
@@ -21,9 +17,7 @@ $hbias = 0.0
 $vbias = 0.0
 $total_bias = ($hbias.abs.to_f+$vbias.abs.to_f)/2.0
 
-$hexmap = Array.new($width+1) { Array.new($height+1)  }
-
-def draw_hex(x,y, marker, type="")
+def draw_hex(pdf, x,y, marker, type="")
 
   if x % 2 == 0
     x_offset = x * ($A+$C)
@@ -35,29 +29,29 @@ def draw_hex(x,y, marker, type="")
   y_offset = $max_height - y_offset
   
   coords = $hex_bases.map { | coordinate| [coordinate[0]+x_offset, coordinate[1]+y_offset] }
-  $pdf.stroke_polygon *coords
+  pdf.stroke_polygon *coords
   
   if marker
     if type == "dungeon"
-      $pdf.fill_ellipse [x_offset+$C, y_offset+$B], 5
+      pdf.fill_ellipse [x_offset+$C, y_offset+$B], 5
     elsif type == "megadungeon"
-      $pdf.fill_ellipse [x_offset+$C, y_offset+$B], 7
+      pdf.fill_ellipse [x_offset+$C, y_offset+$B], 7
     elsif type == "lair"
-      $pdf.fill_ellipse [x_offset+$C, y_offset+$B], 3
+      pdf.fill_ellipse [x_offset+$C, y_offset+$B], 3
       
     elsif type == "settlement"
-      $pdf.stroke_rectangle [x_offset+$C-2.5, y_offset+$B+2.5], 5, 5
+      pdf.stroke_rectangle [x_offset+$C-2.5, y_offset+$B+2.5], 5, 5
     end
   end
   
-  $pdf.font_size(4)
-  $pdf.draw_text "%02d" % x + "%02d" % y,
+  pdf.font_size(4)
+  pdf.draw_text "%02d" % x + "%02d" % y,
              :at => [x_offset+$C-3, y_offset+$B-7]
   
   
 end
 
-def generate_ruin_or_lair(x,y)
+def generate_ruin_or_lair(pdf, hexmap, x,y)
 
   roll = rand(30)
 
@@ -66,21 +60,21 @@ def generate_ruin_or_lair(x,y)
   when 0..3 
     puts "\t\tmegadungeon (6-10 sessions)"
     type = "megadungeon"
-    draw_hex(x,y, true, "megadungeon")
+    draw_hex(pdf, x,y, true, "megadungeon")
   when 3..13
     puts "\t\tdungeon (1-2 sessions)"
     type = "dungeon"
-    draw_hex(x,y, true, "dungeon")
+    draw_hex(pdf, x,y, true, "dungeon")
   else
     puts "\t\tsmall lair (1-3 encounters)"
     type = "lair"
-    draw_hex(x,y, true, "lair")
+    draw_hex(pdf, x,y, true, "lair")
   end
 
-  $hexmap[x][y] = { :x => x, :y => y, :type => type }
+  hexmap[x][y] = { :x => x, :y => y, :type => type }
 end
 
-def generate_hex(x, y)
+def generate_hex(pdf, hexmap, x, y)
 
   if rand($width*$height) <= $number_of_locations
     puts "\tsomething at " + "%02d" % x + "%02d" % y
@@ -102,43 +96,51 @@ def generate_hex(x, y)
     
     if (roll <= 33)
       puts "\t\tsettlement"
-      $hexmap[x][y] = { :x => x, :y => y, :type => "settlement" }
+      hexmap[x][y] = { :x => x, :y => y, :type => "settlement" }
       
-      draw_hex(x,y, true, "settlement")
+      draw_hex(pdf, x,y, true, "settlement")
     else
-      generate_ruin_or_lair(x,y)
+      generate_ruin_or_lair(pdf, hexmap, x,y)
     end
       
   else
-    draw_hex(x,y, false)
+    draw_hex(pdf, x, y, false)
   end
 end
 
 
-for x in 1..$width
-  for y in 1..$height
-    generate_hex(x,y)
+def generate_map_pdf(pdf)
+  
+  hexmap = Array.new($width+1) { Array.new($height+1)  }
+  
+  for x in 1..$width
+    for y in 1..$height
+      generate_hex(pdf, hexmap, x, y)
+    end
   end
-end
+  
+  
+  
+  pdf.start_new_page
+  pdf.move_down 10
+  pdf.font_size(12)
+  pdf.text "Region Key"
 
-$pdf.start_new_page
-$pdf.move_down 10
-$pdf.font_size(12)
-$pdf.text "Region Key"
+  pdf.column_box([0, pdf.cursor],:columns => 2, :width => 500) do
+      for x in 1..$width
+        for y in 1..$height
+          if hexmap[x][y]
 
-$pdf.column_box([0, $pdf.cursor],:columns => 2, :width => 500) do
-    for x in 1..$width
-      for y in 1..$height
-        if $hexmap[x][y]
-
-          $pdf.text  "Hex " + ("%02d" % $hexmap[x][y][:x] + "%02d" % $hexmap[x][y][:y]) + 
-            " - a " + $hexmap[x][y][:type]
+            pdf.text  "Hex " + ("%02d" % hexmap[x][y][:x] + "%02d" % hexmap[x][y][:y]) + 
+              " - a " + hexmap[x][y][:type]
+          end
         end
       end
-    end
+  end
+
+  pdf
+
 end
-  
 
 
-$pdf.render_file "hexagon.pdf"
 

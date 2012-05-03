@@ -1,8 +1,15 @@
-class Application < Sinatra::Base
-  set :root, File.dirname(__FILE__)
-  set :logging, true
+require "./genreg"
+require "sinatra"
+require "sinatra/prawn"
 
-  get '/' do
-    "hello world!"
-  end
+set :prawn, { :margin => [0.25,0.25,0.25,0.25] }
+set :root, File.dirname(__FILE__)
+set :logging, true
+
+get '/' do
+  content_type 'application/pdf'
+
+  prawn :index
+  
 end
+

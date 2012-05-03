@@ -1,6 +1,5 @@
 require 'sinatra'
+require "sinatra/prawn"
 require "./application"
 
-map '/' do
-  run Application
-end
+run Sinatra::Application
