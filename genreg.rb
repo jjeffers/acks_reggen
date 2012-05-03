@@ -118,14 +118,14 @@ def generate_map_pdf(pdf)
       generate_hex(pdf, hexmap, x, y)
     end
   end
-  
-  
-  
+
   pdf.start_new_page
   pdf.move_down 10
   pdf.font_size(12)
   pdf.text "Region Key"
 
+  location_map = {}
+  
   pdf.column_box([0, pdf.cursor],:columns => 2, :width => 500) do
       for x in 1..$width
         for y in 1..$height
@@ -133,11 +133,18 @@ def generate_map_pdf(pdf)
 
             pdf.text  "Hex " + ("%02d" % hexmap[x][y][:x] + "%02d" % hexmap[x][y][:y]) + 
               " - a " + hexmap[x][y][:type]
+            
+            location_map.merge!({ hexmap[x][y][:type] => 1 }) { |key, old_count, new_count| old_count + new_count }
           end
         end
       end
   end
 
+  pdf.move_down 10
+  pdf.text "Summary"
+  location_map.each_pair do |k,v|
+    pdf.text v.to_s + " " + k.to_s
+  end
   pdf
 
 end
