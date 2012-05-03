@@ -1,4 +1,4 @@
-ass Application < Sinatra::Base
+class Application < Sinatra::Base
   set :root, File.dirname(__FILE__)
   set :logging, true
 
