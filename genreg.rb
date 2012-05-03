@@ -1,5 +1,5 @@
 require "prawn"
-
+require "active_support/inflector"
 
 $number_of_locations = 45
 
@@ -143,7 +143,7 @@ def generate_map_pdf(pdf)
   pdf.move_down 10
   pdf.text "Summary"
   location_map.each_pair do |k,v|
-    pdf.text v.to_s + " " + k.to_s
+    pdf.text v.to_s + " " + k.pluralize
   end
   pdf
 
