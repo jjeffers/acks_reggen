@@ -17,7 +17,7 @@ $hbias = 0.0
 $vbias = 0.0
 $total_bias = ($hbias.abs.to_f+$vbias.abs.to_f)/2.0
 
-def draw_hex(pdf, x,y, marker, type="")
+def draw_hex(pdf, x, y, marker, type="")
 
   if x % 2 == 0
     x_offset = x * ($A+$C)
@@ -76,23 +76,25 @@ end
 
 def generate_hex(pdf, hexmap, x, y)
 
-  if rand($width*$height) <= $number_of_locations
-    #puts "\tsomething at " + "%02d" % x + "%02d" % y
+  number_of_locations = 45.0/1200.0 * ($width * $height)
+  
+  if rand($width*$height) <= number_of_locations
+    puts "something at " + "%02d" % x + "%02d" % y
 
     roll = rand(100)
     vbias = ((y.to_f/$height.to_f*$vbias) + (-1*($vbias/2.0)))
     hbias = ((x.to_f/$width.to_f*$hbias)+ (-1*($hbias/2.0)))
     
-    #puts "roll #{roll}"
+    puts "\troll #{roll}"
     if $total_bias == 0
       bias = 0
     else
       bias = (vbias.abs.to_f/$total_bias)*vbias.to_f + (hbias.abs.to_f/$total_bias)*hbias.to_f
     end
     
-    #puts "bias = #{hbias} #{vbias} #{bias}"
+    puts "\tbias = #{hbias} #{vbias} #{bias}"
     roll += bias
-    #puts "roll #{roll}"
+    puts "\tadjusted roll #{roll}"
     
     if (roll <= 33)
       #puts "\t\tsettlement"
@@ -109,10 +111,44 @@ def generate_hex(pdf, hexmap, x, y)
 end
 
 
-def generate_map_pdf(pdf)
+def generate_map_pdf(pdf, width, height, axis, strength)
   
+  $width = width
+  $height = height
   hexmap = Array.new($width+1) { Array.new($height+1)  }
   
+  if axis == "none"
+    
+  elsif axis == "north"
+    $vbias = strength
+    $hbias = 0.0
+  elsif axis == "northeast"
+    $hbias = -1 * strength/2.0
+    $vbias = strength/2.0
+  elsif axis == "east"
+    $hbias = -1 * strength
+    $vbias = 0
+  elsif axis == "southeast"
+    $hbias = -1 * strength/2.0
+    $vbias = -1 * strength/2.0
+  elsif axis == "south"
+    $hbias = 0.0
+    $vbias = -1 * strength
+  elsif axis == "southwest"
+    $hbias = strength/2.0
+    $vbias = -1 * strength/2.0
+  elsif axis == "west"
+    $hbias = strength
+    $vbias = 0.0
+  elsif axis == "northwest"
+    $hbias = strength/2.0
+    $vbias = strength/2.0
+  end
+  
+  puts "hbias = " + $hbias.to_s
+  puts "vbias = " + $vbias.to_s
+  $total_bias = ($hbias.abs.to_f+$vbias.abs.to_f)/2.0
+    
   for x in 1..$width
     for y in 1..$height
       generate_hex(pdf, hexmap, x, y)
@@ -147,8 +183,6 @@ def generate_map_pdf(pdf)
       
   end
 
-
-  
   puts "Done generating pdf."
   pdf
 

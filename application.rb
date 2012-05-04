@@ -7,9 +7,21 @@ set :root, File.dirname(__FILE__)
 set :logging, true
 
 get '/' do
+  
+  erb :index
+  
+end
+
+post '/generatemap' do
+  
+  @width = params[:width].to_i
+  @height = params[:height].to_i
+  @axis = params[:axis]
+  @strength = params[:strength].to_i.abs.to_f
+  puts @strength
   content_type 'application/pdf'
-  headers['Cache-Control'] = "public, max-age=6000000000000000000"
-  prawn :index
+  
+  prawn :generatemap
   
 end
 
