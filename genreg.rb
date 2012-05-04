@@ -17,7 +17,60 @@ $hbias = 0.0
 $vbias = 0.0
 $total_bias = ($hbias.abs.to_f+$vbias.abs.to_f)/2.0
 
-def draw_hex(pdf, x, y, marker, type="")
+
+def generate_ruin_or_lair(hexmap, x,y)
+
+  roll = rand(30)
+
+  type = ""
+  case roll 
+  when 0..3 
+    #puts "\t\tmegadungeon (6-10 sessions)"
+    type = "megadungeon"
+  when 3..13
+    #puts "\t\tdungeon (1-2 sessions)"
+    type = "dungeon"
+  else
+    #puts "\t\tsmall lair (1-3 encounters)"
+    type = "lair"
+  end
+
+  hexmap[x][y] = { :x => x, :y => y, :type => type }
+end
+
+def generate_hex(hexmap, x, y)
+
+  number_of_locations = 45.0/1200.0 * ($width * $height)
+  
+  if rand($width*$height) <= number_of_locations
+    puts "something at " + "%02d" % x + "%02d" % y
+
+    roll = rand(100)
+    vbias = ((y.to_f/$height.to_f*$vbias) + (-1*($vbias/2.0)))
+    hbias = ((x.to_f/$width.to_f*$hbias)+ (-1*($hbias/2.0)))
+    
+    #puts "\troll #{roll}"
+    if $total_bias == 0
+      bias = 0
+    else
+      bias = (vbias.abs.to_f/$total_bias)*vbias.to_f + (hbias.abs.to_f/$total_bias)*hbias.to_f
+    end
+    
+    #puts "\tbias = #{hbias} #{vbias} #{bias}"
+    roll += bias
+    #puts "\tadjusted roll #{roll}"
+    
+    if (roll <= 33)
+      #puts "\t\tsettlement"
+      hexmap[x][y] = { :x => x, :y => y, :type => "settlement" }
+    else
+      generate_ruin_or_lair(hexmap, x,y)
+    end
+      
+  end
+end
+
+def draw_hex(pdf, location, x, y)
 
   if x % 2 == 0
     x_offset = x * ($A+$C)
@@ -31,15 +84,14 @@ def draw_hex(pdf, x, y, marker, type="")
   coords = $hex_bases.map { | coordinate| [coordinate[0]+x_offset, coordinate[1]+y_offset] }
   pdf.stroke_polygon *coords
   
-  if marker
-    if type == "dungeon"
+  if location != nil
+    if location[:type] == "dungeon"
       pdf.fill_ellipse [x_offset+$C, y_offset+$B], 5
-    elsif type == "megadungeon"
+    elsif location[:type]  == "megadungeon"
       pdf.fill_ellipse [x_offset+$C, y_offset+$B], 7
-    elsif type == "lair"
+    elsif location[:type]  == "lair"
       pdf.fill_ellipse [x_offset+$C, y_offset+$B], 3
-      
-    elsif type == "settlement"
+    elsif location[:type]  == "settlement"
       pdf.stroke_rectangle [x_offset+$C-2.5, y_offset+$B+2.5], 5, 5
     end
   end
@@ -51,65 +103,46 @@ def draw_hex(pdf, x, y, marker, type="")
   
 end
 
-def generate_ruin_or_lair(pdf, hexmap, x,y)
-
-  roll = rand(30)
-
-  type = ""
-  case roll 
-  when 0..3 
-    #puts "\t\tmegadungeon (6-10 sessions)"
-    type = "megadungeon"
-    draw_hex(pdf, x,y, true, "megadungeon")
-  when 3..13
-    #puts "\t\tdungeon (1-2 sessions)"
-    type = "dungeon"
-    draw_hex(pdf, x,y, true, "dungeon")
-  else
-    #puts "\t\tsmall lair (1-3 encounters)"
-    type = "lair"
-    draw_hex(pdf, x,y, true, "lair")
-  end
-
-  hexmap[x][y] = { :x => x, :y => y, :type => type }
-end
-
-def generate_hex(pdf, hexmap, x, y)
-
-  number_of_locations = 45.0/1200.0 * ($width * $height)
+def generate_pdf(pdf, hexmap)
   
-  if rand($width*$height) <= number_of_locations
-    puts "something at " + "%02d" % x + "%02d" % y
-
-    roll = rand(100)
-    vbias = ((y.to_f/$height.to_f*$vbias) + (-1*($vbias/2.0)))
-    hbias = ((x.to_f/$width.to_f*$hbias)+ (-1*($hbias/2.0)))
-    
-    puts "\troll #{roll}"
-    if $total_bias == 0
-      bias = 0
-    else
-      bias = (vbias.abs.to_f/$total_bias)*vbias.to_f + (hbias.abs.to_f/$total_bias)*hbias.to_f
+  for x in 1..$width
+    for y in 1..$height
+      draw_hex(pdf, hexmap[x][y], x, y)
     end
-    
-    puts "\tbias = #{hbias} #{vbias} #{bias}"
-    roll += bias
-    puts "\tadjusted roll #{roll}"
-    
-    if (roll <= 33)
-      #puts "\t\tsettlement"
-      hexmap[x][y] = { :x => x, :y => y, :type => "settlement" }
-      
-      draw_hex(pdf, x,y, true, "settlement")
-    else
-      generate_ruin_or_lair(pdf, hexmap, x,y)
-    end
-      
-  else
-    draw_hex(pdf, x, y, false)
   end
-end
+  
+  pdf.start_new_page
+  pdf.move_down 10
+  pdf.font_size(12)
+  pdf.text "Region Key"
 
+  location_map = {}
+  
+  pdf.column_box([0, pdf.cursor],:columns => 2, :width => 500) do
+      for x in 1..$width
+        for y in 1..$height
+          if hexmap[x][y]
+
+            pdf.text  "Hex " + ("%02d" % hexmap[x][y][:x] + "%02d" % hexmap[x][y][:y]) + 
+              " - a " + hexmap[x][y][:type]
+            
+            location_map.merge!({ hexmap[x][y][:type] => 1 }) { |key, old_count, new_count| old_count + new_count }
+          end
+        end
+      end
+      
+      pdf.move_down 10
+      pdf.text "Summary"
+      location_map.each_pair do |k,v|
+        pdf.text v.to_s + " " + k.pluralize
+      end
+      
+  end
+
+  puts "Done generating pdf."
+  pdf
+
+end
 
 def generate_map_pdf(pdf, width, height, axis, strength)
   
@@ -151,41 +184,12 @@ def generate_map_pdf(pdf, width, height, axis, strength)
     
   for x in 1..$width
     for y in 1..$height
-      generate_hex(pdf, hexmap, x, y)
+      generate_hex(hexmap, x, y)
     end
   end
 
-  pdf.start_new_page
-  pdf.move_down 10
-  pdf.font_size(12)
-  pdf.text "Region Key"
-
-  location_map = {}
+  return generate_pdf(pdf, hexmap)
   
-  pdf.column_box([0, pdf.cursor],:columns => 2, :width => 500) do
-      for x in 1..$width
-        for y in 1..$height
-          if hexmap[x][y]
-
-            pdf.text  "Hex " + ("%02d" % hexmap[x][y][:x] + "%02d" % hexmap[x][y][:y]) + 
-              " - a " + hexmap[x][y][:type]
-            
-            location_map.merge!({ hexmap[x][y][:type] => 1 }) { |key, old_count, new_count| old_count + new_count }
-          end
-        end
-      end
-      
-      pdf.move_down 10
-      pdf.text "Summary"
-      location_map.each_pair do |k,v|
-        pdf.text v.to_s + " " + k.pluralize
-      end
-      
-  end
-
-  puts "Done generating pdf."
-  pdf
-
 end
 
 
