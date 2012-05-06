@@ -8,9 +8,7 @@ class TestMap < Test::Unit::TestCase
     @map = Array.new(5) { Array.new(5) }
 
     @neighbors = []
-    
-    
-    
+
   end
   
   def test_ul_corner
