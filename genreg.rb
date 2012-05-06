@@ -1,5 +1,7 @@
 require "prawn"
 require "active_support/inflector"
+require "./lib/plasma_fractal"
+require "./lib/drainage"
 
 $number_of_locations = 45
 
@@ -43,7 +45,7 @@ def generate_hex(hexmap, x, y)
   number_of_locations = 45.0/1200.0 * ($width * $height)
   
   if rand($width*$height) <= number_of_locations
-    puts "something at " + "%02d" % x + "%02d" % y
+    #puts "something at " + "%02d" % x + "%02d" % y
 
     roll = rand(100)
     vbias = ((y.to_f/$height.to_f*$vbias) + (-1*($vbias/2.0)))
@@ -67,6 +69,8 @@ def generate_hex(hexmap, x, y)
       generate_ruin_or_lair(hexmap, x,y)
     end
       
+  else
+    hexmap[x][y] = { :x => x, :y => y }
   end
 end
 
@@ -85,28 +89,45 @@ def draw_hex(pdf, location, x, y)
   pdf.stroke_polygon *coords
   
   if location != nil
-    if location[:type] == "dungeon"
-      pdf.fill_ellipse [x_offset+$C, y_offset+$B], 5
-    elsif location[:type]  == "megadungeon"
-      pdf.fill_ellipse [x_offset+$C, y_offset+$B], 7
-    elsif location[:type]  == "lair"
-      pdf.fill_ellipse [x_offset+$C, y_offset+$B], 3
-    elsif location[:type]  == "settlement"
-      pdf.stroke_rectangle [x_offset+$C-2.5, y_offset+$B+2.5], 5, 5
+    
+    x_pos = x_offset+$C
+    y_pos = y_offset+$B
+    if location[:terrain] == "mountain"
+      pdf.image "#{settings.root}/images/mountains.png", :at => [x_pos-7, y_pos+6], :fit => [$A+$B,$A+$B]
+    elsif location[:terrain] == "hill"
+      pdf.image "#{settings.root}/images/hills.png", :at => [x_pos-7, y_pos+6], :fit => [$A+$B,$A+$B]  
+    elsif location[:terrain] == "plain"
+      #pdf.image "#{settings.root}/images/hills.png", :at => [x_pos-7, y_pos+6], :fit => [$A+$B,$A+$B]
+    elsif location[:terrain] == "sea"
+      pdf.fill_color "0000ff"
+      pdf.fill_polygon *coords
+      pdf.fill_color "000000"
     end
+    
+    if location[:type] == "dungeon"
+      pdf.image "#{settings.root}/images/dungeon.png", :at => [x_pos-6, y_pos+6], :fit => [$B+$A/2,$B+$A/2]
+    elsif location[:type]  == "megadungeon"
+      pdf.image "#{settings.root}/images/dungeon.png", :at => [x_pos-5, y_pos+8], :fit => [$B+$A,$B+$A]
+    elsif location[:type]  == "lair"
+      pdf.image "#{settings.root}/images/cave.png", :at => [x_pos-4, y_pos+5], :fit => [$B,$B] 
+    elsif location[:type]  == "settlement"
+      pdf.stroke_rectangle [x_pos-2.5, y_pos+2.5], 5, 5
+    end
+    
+    
   end
   
   pdf.font_size(4)
   pdf.draw_text "%02d" % x + "%02d" % y,
-             :at => [x_offset+$C-3, y_offset+$B-7]
+             :at => [x_offset+$C-4, y_offset+$B-7]
   
   
 end
 
 def generate_pdf(pdf, hexmap)
   
-  for x in 1..$width
-    for y in 1..$height
+  for x in 0..$width-1
+    for y in 0..$height-1
       draw_hex(pdf, hexmap[x][y], x, y)
     end
   end
@@ -119,9 +140,9 @@ def generate_pdf(pdf, hexmap)
   location_map = {}
   
   pdf.column_box([0, pdf.cursor],:columns => 2, :width => 500) do
-      for x in 1..$width
-        for y in 1..$height
-          if hexmap[x][y]
+      for x in 0..$width-1
+        for y in 0..$height-1
+          if hexmap[x][y][:type]
 
             pdf.text  "Hex " + ("%02d" % hexmap[x][y][:x] + "%02d" % hexmap[x][y][:y]) + 
               " - a " + hexmap[x][y][:type]
@@ -144,11 +165,65 @@ def generate_pdf(pdf, hexmap)
 
 end
 
+def determine_heightmap(hexmap)
+  
+  pfsize = 2
+  
+  while (pfsize**2 + 1) < $height or (pfsize**2 + 1) < $width
+    puts "plasma fractal size is " + pfsize.to_s
+    pfsize += 2
+  end
+  
+  puts "plasma fractal size is " + (pfsize**2).to_s
+  fractal = PlasmaFractal.new(:size =>(pfsize**2)+1, :height_seed => 100)
+  fractal.generate!
+  
+  for x in 0..$width-1
+    for y in 0..$height-1
+      hexmap[x][y][:height] = fractal.data[x][y]
+    end
+  end
+  
+  
+  $mountain_threshold = 0.90 * fractal.max.to_f
+  $hill_threshold = 0.80 * fractal.max.to_f
+  $plain_threshold = 0.60 * fractal.max.to_f
+  
+end
+
+
+def determine_terrain(hexmap)
+
+  for x in 0..$width-1
+    for y in 0..$height-1
+
+      v = hexmap[x][y][:height]
+      
+      if v.to_f > $mountain_threshold
+        #puts "%02d" % x + "%02d" %y + " height was #{v} and threshold was #{mountain_threshold} so setting mountain"
+        hexmap[x][y][:terrain] = "mountain"
+      elsif v.to_f <= $mountain_threshold and v.to_f > $hill_threshold
+        #puts "%02d" % x + "%02d" %y + " height was #{v} and threshold was #{hill_threshold} so setting hill"
+        hexmap[x][y][:terrain] = "hill"
+      elsif v.to_f <= $hill_threshold and v.to_f > $plain_threshold
+        #puts "%02d" % x + "%02d" %y + " height was #{v} and threshold was #{plain_threshold} so setting plain"
+        hexmap[x][y][:terrain] = "plain"
+      else
+        #puts "%02d" % x + "%02d" %y + " height was #{v} so setting sea"
+        hexmap[x][y][:terrain] = "sea"
+      end
+      
+      
+    end
+  end
+
+end
+
 def generate_map_pdf(pdf, width, height, axis, strength)
   
   $width = width
   $height = height
-  hexmap = Array.new($width+1) { Array.new($height+1)  }
+  hexmap = Array.new($width) { Array.new($height) }
   
   if axis == "none"
     
@@ -182,15 +257,66 @@ def generate_map_pdf(pdf, width, height, axis, strength)
   puts "vbias = " + $vbias.to_s
   $total_bias = ($hbias.abs.to_f+$vbias.abs.to_f)/2.0
     
-  for x in 1..$width
-    for y in 1..$height
+  for x in 0..$width-1
+    for y in 0..$height-1
       generate_hex(hexmap, x, y)
     end
   end
 
+  determine_heightmap(hexmap)
+  calculate_drainage(hexmap)
+  determine_terrain(hexmap)
+ 
+  display_map(hexmap)
+    
   return generate_pdf(pdf, hexmap)
   
 end
 
+def display_map(hexmap)
+  
+  for x in 0..$width-1
+    for y in 0..$height-1
+          
+      v = hexmap[x][y][:terrain]
+      d = hexmap[x][y][:drainage][:value].to_i
+      
+      if d > 50 and v != "sea"
+        print "o"
+      elsif v == "mountain"
+        print "M"
+      elsif v == "hill"
+        print "m"
+      elsif v == "plain"
+        print "_"
+      else
+        print "s"
+      end
+      
+      
+
+
+    end
+    puts
+  end
+end
+
+def display_drainage(hexmap)
+  
+  for x in 0..$width-1
+    for y in 0..$height-1
+          
+      v = hexmap[x][y][:drainage][:value].to_i
+      
+      if v > 50
+        print "d"
+      else
+        print "_"
+      end
+      
+    end
+    puts
+  end
+end
 
 

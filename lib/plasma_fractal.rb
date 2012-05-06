@@ -2,7 +2,7 @@ class PlasmaFractal
   DEFAULT_SIZE = 9
   DEFAULT_HEIGHT_SEED = 100
   
-  attr_reader :size, :height_seed
+  attr_reader :size, :height_seed, :max, :min, :data
   
   def initialize(options = {})
     @size = options.delete(:size) || DEFAULT_SIZE
@@ -14,6 +14,9 @@ class PlasmaFractal
     @data.map! {|d| Array.new(size, 0.0)}
 
     @data[0][0] = @data[0][size-1] = @data[size-1][0] = @data[size-1][size-1] = height_seed
+    
+    @max = 0
+    @min = 0
   end
   
   def generate!
@@ -70,9 +73,16 @@ class PlasmaFractal
   
   def set_cell(x, y, val)
     @data[x][y] = val.to_f
+    if val > @max
+      @max = val
+    elsif val < @min
+      @min = val
+    end
+
   end
 
   def display_height_map
+    
     @data.each do |row|
       row.each do |v|
         if v.to_i > 110
