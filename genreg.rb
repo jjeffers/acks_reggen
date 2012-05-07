@@ -94,8 +94,18 @@ def draw_hex(pdf, location, x, y)
     y_pos = y_offset+$B
     if location[:terrain] == "mountain"
       pdf.image "#{settings.root}/images/mountains.png", :at => [x_pos-7, y_pos+6], :fit => [$A+$B,$A+$B]
+    elsif location[:terrain] == "forested_mountain"
+      pdf.image "#{settings.root}/images/forestedmountains.png", :at => [x_pos-7, y_pos+6], :fit => [$A+$B,$A+$B]
     elsif location[:terrain] == "hill"
-      pdf.image "#{settings.root}/images/hills.png", :at => [x_pos-7, y_pos+6], :fit => [$A+$B,$A+$B]  
+      pdf.image "#{settings.root}/images/hills.png", :at => [x_pos-7, y_pos+6], :fit => [$A+$B,$A+$B]
+    elsif location[:terrain] == "forested_hill"
+      pdf.image "#{settings.root}/images/forestedhills.png", :at => [x_pos-7, y_pos+6], :fit => [$A+$B,$A+$B]
+    elsif location[:terrain] == "grassy_hill"
+      pdf.image "#{settings.root}/images/grassyhills.png", :at => [x_pos-7, y_pos+6], :fit => [$A+$B,$A+$B]
+    elsif location[:terrain] == "forest"
+      pdf.image "#{settings.root}/images/heavyforest.png", :at => [x_pos-7, y_pos+6], :fit => [$A+$B,$A+$B]
+    elsif location[:terrain] == "grassland"
+      pdf.image "#{settings.root}/images/grassland.png", :at => [x_pos-7, y_pos+6], :fit => [$A+$B,$A+$B]
     elsif location[:terrain] == "plain"
       #pdf.image "#{settings.root}/images/hills.png", :at => [x_pos-7, y_pos+6], :fit => [$A+$B,$A+$B]
     elsif location[:terrain] == "sea"
@@ -167,15 +177,15 @@ end
 
 def determine_heightmap(hexmap)
   
-  pfsize = 2
+  pfsize = 1
   
-  while (pfsize**2 + 1) < $height or (pfsize**2 + 1) < $width
+  while (2**pfsize + 1) < $height or (2**pfsize + 1) < $width
     puts "plasma fractal size is " + pfsize.to_s
-    pfsize += 2
+    pfsize += 1
   end
   
-  puts "plasma fractal size is " + (pfsize**2).to_s
-  fractal = PlasmaFractal.new(:size =>(pfsize**2)+1, :height_seed => 100)
+  puts "plasma fractal size is " + pfsize.to_s + " => " + ((2**pfsize)+1).to_s
+  fractal = PlasmaFractal.new(:size =>(2**pfsize)+1, :height_seed => 100)
   fractal.generate!
   
   for x in 0..$width-1
@@ -188,28 +198,74 @@ def determine_heightmap(hexmap)
   $mountain_threshold = 0.90 * fractal.max.to_f
   $hill_threshold = 0.80 * fractal.max.to_f
   $plain_threshold = 0.60 * fractal.max.to_f
-  
+  $max_terrain_height = fractal.max.to_f
 end
 
+
+def find_closest_water(hexmap, x, y)
+
+  closest_source_x = -1
+  closest_source_y = -1
+  closest_source_distance = 99999
+
+  for i in 0..$width-1
+    for j in 0..$height-1
+      
+      if hexmap[i][j][:drainage][:source]
+        
+        distance = Math.sqrt(((x-i).abs**2) + ((y-j).abs**2))
+        
+        if distance < closest_source_distance
+          closests_source_distance = distance
+          closest_source_x = i
+          closest_source_y = j
+        end
+      end
+      
+    end
+  end
+  puts x.to_s + "," + y.to_s + " dist to water = " + closests_source_distance.to_s
+    
+  return closests_source_distance
+      
+end
 
 def determine_terrain(hexmap)
 
   for x in 0..$width-1
     for y in 0..$height-1
-
+      
+      closest_water = find_closest_water(hexmap, x, y)
+      
       v = hexmap[x][y][:height]
       
       if v.to_f > $mountain_threshold
-        #puts "%02d" % x + "%02d" %y + " height was #{v} and threshold was #{mountain_threshold} so setting mountain"
-        hexmap[x][y][:terrain] = "mountain"
+        if closest_water >= 0 and closest_water <= 4
+          hexmap[x][y][:terrain] = "forested_mountain"
+        else
+          hexmap[x][y][:terrain] = "mountain"
+        end
       elsif v.to_f <= $mountain_threshold and v.to_f > $hill_threshold
-        #puts "%02d" % x + "%02d" %y + " height was #{v} and threshold was #{hill_threshold} so setting hill"
-        hexmap[x][y][:terrain] = "hill"
+        
+        if closest_water >= 0 and closest_water <= 4
+          hexmap[x][y][:terrain] = "grassy_hill"
+        elsif closest_water > 4 and closest_water <= 8
+          hexmap[x][y][:terrain] = "forested_hill"
+        else
+          hexmap[x][y][:terrain] = "hill"
+        end
+        
       elsif v.to_f <= $hill_threshold and v.to_f > $plain_threshold
-        #puts "%02d" % x + "%02d" %y + " height was #{v} and threshold was #{plain_threshold} so setting plain"
-        hexmap[x][y][:terrain] = "plain"
+        
+        if closest_water >= 0 and closest_water <= 4
+          hexmap[x][y][:terrain] = "forest"
+        elsif closest_water > 4 and closest_water <= 8
+          hexmap[x][y][:terrain] = "grassland"
+        else
+          hexmap[x][y][:terrain] = "plain"
+        end
+        
       else
-        #puts "%02d" % x + "%02d" %y + " height was #{v} so setting sea"
         hexmap[x][y][:terrain] = "sea"
       end
       
@@ -275,43 +331,31 @@ end
 
 def display_map(hexmap)
   
+
   for x in 0..$width-1
-    for y in 0..$height-1
+    for y in ($height-1).downto(0)
           
       v = hexmap[x][y][:terrain]
       d = hexmap[x][y][:drainage][:value].to_i
       
-      if d > 50 and v != "sea"
+      if hexmap[x][y][:drainage][:source] and v != "sea"
         print "o"
       elsif v == "mountain"
         print "M"
+      elsif v == "forested_mountain"
+        print "F"
+      elsif v == "grassy_hill"
+        print "m"
       elsif v == "hill"
         print "m"
+      elsif v == "forest"
+        print "f"
       elsif v == "plain"
         print "_"
-      else
+      elsif v == "sea"
         print "s"
-      end
-      
-      
-
-
-    end
-    puts
-  end
-end
-
-def display_drainage(hexmap)
-  
-  for x in 0..$width-1
-    for y in 0..$height-1
-          
-      v = hexmap[x][y][:drainage][:value].to_i
-      
-      if v > 50
-        print "d"
       else
-        print "_"
+        print "-"
       end
       
     end
