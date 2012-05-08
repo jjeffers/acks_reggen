@@ -1,5 +1,13 @@
 require "./lib/map"
 
+def calculate_drainage_map(hmap, dmap)
+  for x in 0..hmap.size-1
+    for y in 0..hmap[0].size-1
+      
+    end
+  end
+end
+
 def calculate_drainage(map)
   
   2.times { calculate_slopes(map) }
