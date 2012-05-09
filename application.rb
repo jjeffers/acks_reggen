@@ -18,7 +18,8 @@ post '/generatemap' do
   @height = params[:height].to_i
   @axis = params[:axis]
   @strength = params[:strength].to_i.abs.to_f
-  puts @strength
+  @terrain = params[:terrain].to_i
+  puts @terrain
   content_type 'application/pdf'
   
   prawn :generatemap

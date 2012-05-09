@@ -1,28 +1,34 @@
 <form action="/generatemap" method ="post" accept-charset="utf-8">
-<br/>	
-<label for="width">Width (hexes)</label> 
-<input type="text" id="width" name="width" value="30">
-<br/>
-<label for="height">Height (hexes)</label> 
-<input type="text" id="height" name="height" value="40">
-<br/>
-<label for="axis">Civilized Lands Lay to the...</label> 
-<select name="axis">
-  <option value="none">(No Civilized Lands Bias)</option>
-  <option value="north">North</option>
-  <option value="northeast">Northeast</option>
-  <option value="east">East</option>
-  <option value="southeast">Southeast</option>
-  <option value="south">South</option>
-  <option value="southwest">Southwest</option>
-  <option value="west">West</option>
-  <option value="northwest">Northwest</option>
-</select>
-<br/>
-<label for="strength">Civilized Lands Bias Strength</label> 
-<input type="text" id="strength" name="strength" value="500">
-<br/>
-<input type="submit" value="Generate Map">
+	<br/>	
+	<label for="width">Width (hexes)</label> 
+	<input type="text" id="width" name="width" value="30">
+	<br/>
+	<label for="height">Height (hexes)</label> 
+	<input type="text" id="height" name="height" value="40">
+	<br/>
+	<label for="axis">Civilized Lands Lay to the...</label> 
+	<select name="axis">
+		<option value="none">(No Civilized Lands Bias)</option>
+		<option value="north">North</option>
+		<option value="northeast">Northeast</option>
+		<option value="east">East</option>
+		<option value="southeast">Southeast</option>
+		<option value="south">South</option>
+		<option value="southwest">Southwest</option>
+		<option value="west">West</option>
+		<option value="northwest">Northwest</option>
+	</select>
+	<br/>
+	<label for="strength">Civilized Lands Bias Strength</label> 
+	<input type="text" id="strength" name="strength" value="500">
+	<br/>
+	<label for="terrain">Generate Terrain?</label>
+	<select name="terrain">
+		<option value="1">Yes, please.</option>
+		<option value="0">No, I'm old school, thanks.</option>
+	</select>
+	<br/>
+	<input type="submit" value="Generate Map">
 </form>
 
 <div>

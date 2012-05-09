@@ -240,7 +240,7 @@ end
 
 
 
-def generate_map_pdf(pdf, width, height, axis, strength)
+def generate_map_pdf(pdf, width, height, axis, strength, terrain)
   
   $width = width
   $height = height
@@ -305,8 +305,10 @@ def generate_map_pdf(pdf, width, height, axis, strength)
   print_map(wmap)
   puts "\n"
    
-  determine_terrain(hmap, dmap, wmap, tmap)
- 
+  if terrain == 1
+    determine_terrain(hmap, dmap, wmap, tmap)
+  end
+  
   display_map_terrain(tmap)
     
   map_each(hmap) do |x, y, cell|

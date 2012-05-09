@@ -1,1 +1,1 @@
-generate_map_pdf(pdf, @width, @height, @axis, @strength)
+generate_map_pdf(pdf, @width, @height, @axis, @strength, @terrain)

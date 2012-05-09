@@ -21,8 +21,6 @@ def determine_terrain_type(height, drainage, water)
     
   elsif height <= $hill_threshold and height > $plain_threshold
 
-    puts water
-    puts height
     if water >=  2.0
       return "lake"
     elsif water > 1.0 and water < 2.0 and height < ($plain_threshold*1.10)
