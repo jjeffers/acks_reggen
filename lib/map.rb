@@ -1,3 +1,26 @@
+def map_each(map)
+  
+  for y in 0..map[0].size-1
+    for x in 0..map.size-1
+      yield x, y, map[x][y]
+    end
+  end
+  
+end
+
+def print_map(map)
+   
+  for y in 0..$height-1 
+    print "\n"
+    for x in 0..$width-1
+      print " " + "%03d" % map[x][y]
+    end
+  end
+  puts "\n"
+
+end
+
+
 def neighbors(map, x, y)
   
   if x > 0

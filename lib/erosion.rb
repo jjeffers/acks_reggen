@@ -44,16 +44,16 @@ module Erosion
         current_cell_altitude = hmap[x][y] + wmap[x][y]
         number_of_neighbors = 0
         total_delta_altitude = 0
-        
+
         hex_neighbors(hmap, x, y) do |i, j, neighbor_cell|
           neighbor_altitude = hmap[i][j] + wmap[i][j]
-          
+
           if current_cell_altitude > neighbor_altitude
             neighbor_altitude_total += hmap[i][j] + wmap[i][j]
             total_delta_altitude += (current_cell_altitude - neighbor_altitude)
             number_of_neighbors += 1
           end
-          
+        
         end
         
         average_neighbor_altitude = neighbor_altitude_total/number_of_neighbors.to_f
