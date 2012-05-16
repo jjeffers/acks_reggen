@@ -46,12 +46,25 @@ def calculate_flow_accumulation(dmap, fmap)
   for x in 0..dmap.size-1
     for y in 0..dmap[0].size-1
       
-      location = dmap[x][y]
-      if location[0] != x or location[1] != y
-        puts "Adding flow from " + x.to_s + ", " + y.to_s +  
-          " to neighbor at " + location[0].to_s + "," + location[1].to_s
-        fmap[location[0]][location[1]] += 
-          fmap[x][y]
+      puts "\Starting flow from " + x.to_s + ", " + y.to_s 
+        
+      current_x = x
+      current_y = y
+      
+      next_location = dmap[x][y]
+      
+      while next_location[0] != current_x or next_location[1] != current_y
+        
+        puts "\tFollowing flow from " + current_x.to_s + ", " + current_y.to_s +  
+          " to neighbor at " + next_location[0].to_s + "," + next_location[1].to_s
+          
+        
+        fmap[current_x][current_y] += 1.0
+        
+        current_x = next_location[0]
+        current_y = next_location[1]
+        next_location = dmap[current_x][current_y]
+        
       end
       
     end

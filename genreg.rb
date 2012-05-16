@@ -349,16 +349,16 @@ def generate_map_pdf(pdf, width, height, axis, strength, terrain)
   
   calculate_drainage(hmap, drainage_map)
   
-  3.times { calculate_flow_accumulation(drainage_map, flow_map) }
+  calculate_flow_accumulation(drainage_map, flow_map)
  
-  determine_rivers(flow_map, drainage_map, rmap, 20.0)
+  determine_rivers(flow_map, drainage_map, rmap, 3.0)
   
   
   puts "drainage map"
   print_map(drainage_map)
   puts "\n"
   
-  puts "flow map"
+  puts "flow accumulation map"
   print_map(flow_map)
   puts "\n"
   
