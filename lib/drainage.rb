@@ -3,52 +3,51 @@ require "./lib/map"
 def calculate_drainage(hmap, dmap)
   
   pits = 0 
-  for x in 0..hmap.size-1
-    for y in 0..hmap[0].size-1
-      
-      location = hmap[x][y]
-      
-      deepest_neighbor_x, deepest_neighbor_y = find_deepest_neighbor(hmap, x, y)
+  
+  map_each(hmap) do |x, y, cell|
 
-      if deepest_neighbor_x == x and deepest_neighbor_y == y
-        pits += 1
-        puts "Found a pit at " + x.to_s + ", " + y.to_s
-        
-        dmap[x][y] = x,y
-        
-        deepest_pour_point = hmap[x][y]
-        find_plateau_neighbors(hmap, x, y).each do |i, j, neighbor|
-          puts "\tneighbor at same height at " + i.to_s + "," + j.to_s
+    location = hmap[x][y]
 
-          plateau_pour_point_x = i
-          plateau_pour_point_y = j
+    deepest_neighbor_x, deepest_neighbor_y = find_deepest_neighbor(hmap, x, y)
 
-          deepest_plateau_neighbor_x, deepest_plateau_neighbor_y = 
-          find_deepest_neighbor(hmap, i, j)
+    if deepest_neighbor_x == x and deepest_neighbor_y == y
+      pits += 1
+      puts "Found a pit at " + x.to_s + ", " + y.to_s
 
-          if deepest_plateau_neighbor_x != i or deepest_plateau_neighbor_y != j
-            puts "\t\tFound a plateau pour point."
-            if hmap[deepest_plateau_neighbor_x][deepest_plateau_neighbor_y] < deepest_pour_point
-              plateau_pour_point_x = deepest_plateau_neighbor_x
-              plateau_pour_point_x = deepest_plateau_neighbor_y
-              deepest_pour_point = hmap[deepest_plateau_neighbor_x][deepest_plateau_neighbor_y]
-            end
+      dmap[x][y] = x,y
 
-          end
+      deepest_pour_point = hmap[x][y]
+      find_plateau_neighbors(hmap, x, y).each do |i, j, neighbor|
+        puts "\tneighbor at same height at " + i.to_s + "," + j.to_s
 
-          if plateau_pour_point_x != i or plateau_pour_point_y != j
-            dmap[x][y] = plateau_pour_point_x,plateau_pour_point_y
+        plateau_pour_point_x = i
+        plateau_pour_point_y = j
+
+        deepest_plateau_neighbor_x, deepest_plateau_neighbor_y = 
+        find_deepest_neighbor(hmap, i, j)
+
+        if deepest_plateau_neighbor_x != i or deepest_plateau_neighbor_y != j
+          puts "\t\tFound a plateau pour point."
+          if hmap[deepest_plateau_neighbor_x][deepest_plateau_neighbor_y] < deepest_pour_point
+            plateau_pour_point_x = deepest_plateau_neighbor_x
+            plateau_pour_point_x = deepest_plateau_neighbor_y
+            deepest_pour_point = hmap[deepest_plateau_neighbor_x][deepest_plateau_neighbor_y]
           end
 
         end
 
-      else
-        puts "Deepest slope at " + x.to_s + ", " + y.to_s + " is at adj " + 
-        deepest_neighbor_x.to_s + ", " + deepest_neighbor_y.to_s
-        dmap[x][y] = deepest_neighbor_x, deepest_neighbor_y
+        if plateau_pour_point_x != i or plateau_pour_point_y != j
+          dmap[x][y] = plateau_pour_point_x,plateau_pour_point_y
+        end
+
       end
-      
+
+    else
+      puts "Deepest slope at " + x.to_s + ", " + y.to_s + " is at adj " + 
+      deepest_neighbor_x.to_s + ", " + deepest_neighbor_y.to_s
+      dmap[x][y] = deepest_neighbor_x, deepest_neighbor_y
     end
+
   end
 
   puts "Found #{pits} pits."
