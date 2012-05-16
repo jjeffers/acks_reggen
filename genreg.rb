@@ -4,6 +4,7 @@ require "./lib/plasma_fractal"
 require "./lib/drainage"
 require "./lib/erosion"
 require "./lib/terrain"
+require "./lib/fractal"
 
 $number_of_locations = 45
 
@@ -70,8 +71,7 @@ def generate_hex(lmap, tmap, x, y)
   end
 end
 
-def draw_hex(pdf, location, terrain, drainage, x, y)
-
+def hex_to_screen(x, y)
   if x % 2 == 0
     x_offset = x * ($A+$C)
     y_offset = y * (2*$B)
@@ -80,6 +80,91 @@ def draw_hex(pdf, location, terrain, drainage, x, y)
     y_offset = (y * (2*$B)) - $B
   end
   y_offset = $max_height - y_offset
+  
+  return x_offset, y_offset
+end
+
+def draw_rivers(pdf, location, terrain, drainage, river, x, y)
+  x_offset, y_offset = hex_to_screen(x, y)
+  
+  coords = $hex_bases.map { | coordinate| [coordinate[0]+x_offset, coordinate[1]+y_offset] }
+  
+  if river 
+    
+    i = river[0]
+    j = river[1]
+   
+    
+    if x % 2 != 0
+      if i == x and j < y
+        angle = 90
+      elsif i > x and j < y
+        angle = 30
+      elsif i > x and j == y
+        angle = 330
+      elsif i == x and j > y
+        angle = 270
+      elsif i < x and j == y
+        angle = 210
+      else i < x and j < y 
+        angle = 150
+      end 
+    else
+      if i == x and j < y
+        angle = 90
+      elsif i > x and j == y
+        angle = 30
+      elsif i > x and j > y
+        angle = 330
+      elsif i == x and j > y
+        angle = 270
+      elsif i < x and j > y
+        angle = 210
+      else i < x and j == y 
+        angle = 150
+      end
+    end
+    
+    radians = angle * Math::PI/180
+    
+    to_x, to_y = hex_to_screen(river[0], river[1])
+          
+    from_x = x_offset + $B
+    from_y = y_offset + $C
+    to_x += $B
+    to_y += $C
+
+    if i != x or j != y
+      
+      y_coords = linear_midpoint_displacement(from_x, from_x+17, 17)
+
+      pdf.move_to(from_x, from_y)
+      
+      last_coords = nil
+      pdf.rotate(angle, :origin => [from_x, from_y]) do
+        pdf.stroke do
+          y_coords.each_with_index do |y_coord, index|
+            pdf.join_style = :round
+            pdf.stroke_color "0000ff"
+            pdf.line_width 2
+            pdf.line_to(from_x+index, from_y+y_coord)
+            last_coords = [from_x+index, from_y+y_coord]
+          end
+          pdf.line_to(last_coords[0]+2, last_coords[1]+2)
+          pdf.stroke
+        end
+      end
+
+      pdf.stroke_color "000000"
+
+    end
+  end
+  
+end
+
+def draw_hex(pdf, location, terrain, drainage, river, x, y)
+
+  x_offset, y_offset = hex_to_screen(x, y)
   
   coords = $hex_bases.map { | coordinate| [coordinate[0]+x_offset, coordinate[1]+y_offset] }
   pdf.stroke_polygon *coords
@@ -124,32 +209,33 @@ def draw_hex(pdf, location, terrain, drainage, x, y)
     elsif location  == "settlement"
       pdf.stroke_rectangle [x_pos-2.5, y_pos+2.5], 5, 5
     end
-    
-    #water_size = (drainage.to_f / 500.0) * $C
-    #if water_size > $C
-    #  water_size = $C
-    #end
-    
-    #pdf.fill_color "0000ff"
-    #pdf.fill_ellipse [x_pos, y_pos], water_size
-    #pdf.fill_color "000000"
-    
-    #pdf.draw_text location[:height].to_i, :at => [x_pos, y_pos], :size => 6
-                    
+
   end
   
   pdf.font_size(4)
+  
   pdf.draw_text "%02d" % x + "%02d" % y,
              :at => [x_offset+$C-4, y_offset+$B-7]
   
   
 end
 
-def generate_pdf(pdf, lmap, tmap, dmap)
+def generate_pdf(pdf, hmap, lmap, tmap, dmap, rmap)
   
   map_each(lmap) do |x, y, cell|
-    draw_hex(pdf, lmap[x][y], tmap[x][y], dmap[x][y], x, y)
+    draw_rivers(pdf, lmap[x][y], tmap[x][y], dmap[x][y], rmap[x][y], x, y)
   end
+  
+  map_each(lmap) do |x, y, cell|
+    draw_hex(pdf, lmap[x][y], tmap[x][y], dmap[x][y], rmap[x][y], x, y)
+  end
+  
+  map_each(hmap) do |x, y, cell|
+    x_offset, y_offset = hex_to_screen(x, y)
+    pdf.draw_text cell.to_i.to_s, :at => [x_offset+$C, y_offset+$B]
+    
+  end
+
   
   pdf.start_new_page
   pdf.move_down 10
@@ -206,40 +292,6 @@ def determine_heightmap(hmap)
   $max_terrain_height = fractal.max.to_f
 end
 
-
-def find_closest_water(hexmap, x, y)
-
-  closest_source_x = -1
-  closest_source_y = -1
-  closest_source_distance = 99999
-
-  #puts "Checking water sources near " + x.to_s + "," + y.to_s
-  
-  for i in 0..$width-1
-    for j in 0..$height-1
-      
-      if hexmap[i][j][:drainage][:source]
-        
-        distance = Math.sqrt(((x-i).abs**2) + ((y-j).abs**2))
-        #puts "water source at " + i.to_s + "," + j.to_s + " dist of " + distance.to_s
-        
-        if distance < closest_source_distance
-          closest_source_distance = distance
-          closest_source_x = i
-          closest_source_y = j
-        end
-      end
-      
-    end
-  end
-  #puts x.to_s + "," + y.to_s + " dist to water = " + closest_source_distance.to_s
-    
-  return closest_source_distance
-      
-end
-
-
-
 def generate_map_pdf(pdf, width, height, axis, strength, terrain)
   
   $width = width
@@ -277,15 +329,14 @@ def generate_map_pdf(pdf, width, height, axis, strength, terrain)
   puts "hbias = " + $hbias.to_s
   puts "vbias = " + $vbias.to_s
   $total_bias = ($hbias.abs.to_f+$vbias.abs.to_f)/2.0
-    
   
   lmap = Array.new($width) { Array.new($height) { "" } }
-  
   hmap = Array.new($width) { Array.new($height) { 0.0 }}
-  dmap = Array.new($width) { Array.new($height) { 1.0 }}
+  drainage_map = Array.new($width) { Array.new($height) { [-1, -1] }}
   wmap = Array.new($width) { Array.new($height) { 0.0 }}
   smap = Array.new($width) { Array.new($height) { 0.0 }}
-  fmap = Array.new($width) { Array.new($height) { 0.0 }}
+  flow_map = Array.new($width) { Array.new($height) { 1.0 }}
+  rmap = Array.new($width) { Array.new($height) }
   tmap = Array.new($width) { Array.new($height) { "plain" }}
   
   determine_heightmap(hmap)
@@ -296,17 +347,31 @@ def generate_map_pdf(pdf, width, height, axis, strength, terrain)
   puts "height map"
   print_map(hmap)  
   
-  3.times { calculate_drainage(hmap, dmap) }
+  calculate_drainage(hmap, drainage_map)
+  
+  3.times { calculate_flow_accumulation(drainage_map, flow_map) }
+ 
+  determine_rivers(flow_map, drainage_map, rmap, 20.0)
+  
+  
   puts "drainage map"
-  print_map(dmap)
+  print_map(drainage_map)
   puts "\n"
   
+  puts "flow map"
+  print_map(flow_map)
+  puts "\n"
+  
+  puts "river map"
+   print_map(rmap)
+   puts "\n"
+   
   puts "water map"
   print_map(wmap)
   puts "\n"
    
   if terrain == 1
-    determine_terrain(hmap, dmap, wmap, tmap)
+    determine_terrain(hmap, flow_map, wmap, tmap)
   end
   
   display_map_terrain(tmap)
@@ -315,7 +380,7 @@ def generate_map_pdf(pdf, width, height, axis, strength, terrain)
     generate_hex(lmap, tmap, x, y)
   end
   
-  return generate_pdf(pdf, lmap, tmap, dmap)
+  return generate_pdf(pdf, hmap, lmap, tmap, flow_map, rmap)
   
 end
 

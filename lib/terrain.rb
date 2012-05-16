@@ -49,3 +49,34 @@ def determine_terrain(hmap, dmap, wmap, tmap)
   end
   
 end
+
+def find_closest_water(hexmap, x, y)
+
+  closest_source_x = -1
+  closest_source_y = -1
+  closest_source_distance = 99999
+
+  #puts "Checking water sources near " + x.to_s + "," + y.to_s
+  
+  for i in 0..$width-1
+    for j in 0..$height-1
+      
+      if hexmap[i][j][:drainage][:source]
+        
+        distance = Math.sqrt(((x-i).abs**2) + ((y-j).abs**2))
+        #puts "water source at " + i.to_s + "," + j.to_s + " dist of " + distance.to_s
+        
+        if distance < closest_source_distance
+          closest_source_distance = distance
+          closest_source_x = i
+          closest_source_y = j
+        end
+      end
+      
+    end
+  end
+  #puts x.to_s + "," + y.to_s + " dist to water = " + closest_source_distance.to_s
+    
+  return closest_source_distance
+      
+end

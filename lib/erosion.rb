@@ -1,7 +1,7 @@
 module Erosion
   
   def self.erode(hmap, wmap, smap)
-    kr = 1.0
+    kr = 0.2
     ks = 0.01
     ke = 0.5
     kc = 0.01

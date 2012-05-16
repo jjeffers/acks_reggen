@@ -62,6 +62,7 @@ def neighbors(map, x, y)
   
 end
 
+
 def hex_neighbors(map, x, y)
   
   if y > 0
