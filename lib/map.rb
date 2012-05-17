@@ -1,7 +1,7 @@
-def map_each(map)
+def map_each(map, start = 0, stop = 1)
   
-  for y in 0..map[0].size-1
-    for x in 0..map.size-1
+  for y in 0..map[0].size-stop
+    for x in 0..map.size-stop
       yield x, y, map[x][y]
     end
   end

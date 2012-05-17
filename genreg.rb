@@ -222,20 +222,19 @@ end
 
 def generate_pdf(pdf, hmap, lmap, tmap, dmap, rmap)
   
-  map_each(lmap) do |x, y, cell|
+  map_each(lmap, 1, 3) do |x, y, cell|
     draw_rivers(pdf, lmap[x][y], tmap[x][y], dmap[x][y], rmap[x][y], x, y)
   end
   
-  map_each(lmap) do |x, y, cell|
+  map_each(lmap, 1, 3) do |x, y, cell|
     draw_hex(pdf, lmap[x][y], tmap[x][y], dmap[x][y], rmap[x][y], x, y)
   end
   
-  map_each(hmap) do |x, y, cell|
-    x_offset, y_offset = hex_to_screen(x, y)
-    pdf.draw_text cell.to_i.to_s, :at => [x_offset+$C, y_offset+$B]
+  #map_each(hmap, 1, 3) do |x, y, cell|
+  #  x_offset, y_offset = hex_to_screen(x, y)
+  #  pdf.draw_text cell.to_i.to_s, :at => [x_offset+$C, y_offset+$B]
     
-  end
-
+  #end
   
   pdf.start_new_page
   pdf.move_down 10
@@ -245,23 +244,23 @@ def generate_pdf(pdf, hmap, lmap, tmap, dmap, rmap)
   location_map = {}
   
   pdf.column_box([0, pdf.cursor],:columns => 2, :width => 500) do
-      for x in 0..$width-1
-        for y in 0..$height-1
-          if lmap[x][y] != ""
+    for x in 1..lmap.size-3
+      for y in 1..lmap[0].size-3
+        if lmap[x][y] != ""
 
-            pdf.text  "Hex " + ("%02d" % x + "%02d" % y) +" - a " + lmap[x][y]
+          pdf.text  "Hex " + ("%02d" % x + "%02d" % y) +" - a " + lmap[x][y]
 
-            location_map.merge!({ lmap[x][y] => 1 }) { |key, old_count, new_count| old_count + new_count }
-          end
+          location_map.merge!({ lmap[x][y] => 1 }) { |key, old_count, new_count| old_count + new_count }
         end
       end
-      
-      pdf.move_down 10
-      pdf.text "Summary"
-      location_map.each_pair do |k,v|
-        pdf.text v.to_s + " " + k.pluralize
-      end
-      
+    end
+
+    pdf.move_down 10
+    pdf.text "Summary"
+    location_map.each_pair do |k,v|
+      pdf.text v.to_s + " " + k.pluralize
+    end
+
   end
 
   puts "Done generating pdf."
@@ -294,8 +293,16 @@ end
 
 def generate_map_pdf(pdf, width, height, axis, strength, terrain)
   
-  $width = width
-  $height = height
+  if $width > 50
+    $width = 50
+  end
+  
+  if $height > 50
+    $height = 50
+  end
+  
+  $width = width + 2
+  $height = height + 2
   puts "Request width " + width.to_s + " and height " + height.to_s
 
   if axis == "none"
@@ -351,7 +358,7 @@ def generate_map_pdf(pdf, width, height, axis, strength, terrain)
   
   calculate_flow_accumulation(drainage_map, flow_map)
  
-  determine_rivers(flow_map, drainage_map, rmap, 3.0)
+  determine_rivers(flow_map, drainage_map, rmap, 6.0)
   
   
   puts "drainage map"

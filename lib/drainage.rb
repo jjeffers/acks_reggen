@@ -17,6 +17,7 @@ def calculate_drainage(hmap, dmap)
       dmap[x][y] = x,y
 
       deepest_pour_point = hmap[x][y]
+      
       find_plateau_neighbors(hmap, x, y).each do |i, j, neighbor|
         puts "\tneighbor at same height at " + i.to_s + "," + j.to_s
 
@@ -24,19 +25,23 @@ def calculate_drainage(hmap, dmap)
         plateau_pour_point_y = j
 
         deepest_plateau_neighbor_x, deepest_plateau_neighbor_y = 
-        find_deepest_neighbor(hmap, i, j)
+          find_deepest_neighbor(hmap, i, j)
 
-        if deepest_plateau_neighbor_x != i or deepest_plateau_neighbor_y != j
-          puts "\t\tFound a plateau pour point."
+        if (deepest_plateau_neighbor_x != i or deepest_plateau_neighbor_y != j) and
+          (deepest_plateau_neighbor_x != x and deepest_plateau_neighbor_y != y)
+          
           if hmap[deepest_plateau_neighbor_x][deepest_plateau_neighbor_y] < deepest_pour_point
             plateau_pour_point_x = deepest_plateau_neighbor_x
-            plateau_pour_point_x = deepest_plateau_neighbor_y
+            plateau_pour_point_y = deepest_plateau_neighbor_y
             deepest_pour_point = hmap[deepest_plateau_neighbor_x][deepest_plateau_neighbor_y]
           end
 
         end
 
-        if plateau_pour_point_x != i or plateau_pour_point_y != j
+        if (plateau_pour_point_x != i or plateau_pour_point_y != j) and
+          (plateau_pour_point_x != x and plateau_pour_point_y != y) 
+          puts "\t\tFound a plateau pour point at " + plateau_pour_point_x.to_s + "," + 
+            plateau_pour_point_y.to_s
           dmap[x][y] = plateau_pour_point_x,plateau_pour_point_y
         end
 
