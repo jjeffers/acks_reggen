@@ -370,8 +370,8 @@ def generate_map_pdf(pdf, width, height, axis, strength, terrain)
   puts "\n"
   
   puts "river map"
-   print_map(rmap)
-   puts "\n"
+  print_map(rmap)
+  puts "\n"
    
   puts "water map"
   print_map(wmap)

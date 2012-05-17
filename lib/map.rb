@@ -13,7 +13,7 @@ def print_map(map)
   for y in 0..$height-1 
     print "\n"
     for x in 0..$width-1
-      print " " + "%03d" % map[x][y]
+      print " " + (map[x][y].nil? ? "---" : "%03d" % map[x][y])
     end
   end
   puts "\n"
