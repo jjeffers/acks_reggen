@@ -5,7 +5,6 @@ gem "sinatra"
 gem "prawn"
 gem "activesupport"
 
-source "http://gems.github.com"
-gem  "dberkom-sinatra-prawn"
+gem  "dberkom-sinatra-prawn", git: 'git@github.com:danielberkompas/sinatra-prawn.git'
 
 

@@ -1,12 +1,16 @@
+GIT
+  remote: git@github.com:danielberkompas/sinatra-prawn.git
+  revision: 610c58a0105ab2fd3cd3b0b83b9b32c735260ee4
+  specs:
+    dberkom-sinatra-prawn (0.9.2.2)
+      prawn
+
 GEM
   remote: http://rubygems.org/
-  remote: http://gems.github.com/
   specs:
     Ascii85 (1.0.1)
     activesupport (3.1.0)
       multi_json (~> 1.0)
-    dberkom-sinatra-prawn (0.9.2.2)
-      prawn
     i18n (0.6.0)
     multi_json (1.0.3)
     pdf-reader (1.1.0)
@@ -31,7 +35,10 @@ PLATFORMS
 
 DEPENDENCIES
   activesupport
-  dberkom-sinatra-prawn
+  dberkom-sinatra-prawn!
   i18n
   prawn
   sinatra
+
+BUNDLED WITH
+   2.0.1
